@@ -39,11 +39,77 @@
 
   Testing the server - run `npm run test-todoServer` command in terminal
  */
-  const express = require('express');
-  const bodyParser = require('body-parser');
-  
-  const app = express();
-  
-  app.use(bodyParser.json());
-  
-  module.exports = app;
+const express = require('express');
+const { v4: uuidv4, parse } = require('uuid');
+
+const app = express();
+app.use(express.json());
+
+let todoList = [];
+
+app.get('/todos', (req, res) => {
+  res.status(200).json(todoList);
+});
+
+app.get('/todos/:id', (req, res) => {
+  const { id } = req.params;
+
+  for (let i = 0; i < todoList.length; i++) {
+    if (id == todoList[i]['id']) {
+      res.status(200).json(todoList[i]);
+    }
+  }
+  res.status(404).send('Not Found');
+});
+
+app.post('/todos', (req, res) => {
+  const { title, description } = req.body;
+
+  const newTodo = {
+    id: Math.floor(Math.random() * 1000),
+    title,
+    description,
+  };
+
+  todoList.push(newTodo);
+  res.status(201).json({ id: newTodo.id });
+});
+
+app.put('/todos/:id', (req, res) => {
+  const { title, description } = req.body;
+  const { id } = req.params;
+
+  try {
+    const todo = todoList.findIndex((todo) => todo.id == id);
+    console.log(todo);
+    if (todo !== -1) {
+      todoList[todo].title = title;
+      todoList[todo].description = description;
+    } else {
+      throw new Error();
+    }
+    res.status(200).send('Found and Updated');
+  } catch (error) {
+    res.status(404).send('Not Found');
+  }
+});
+
+app.delete('/todos/:id', (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const findTodoIndex = todoList.findIndex((todo) => todo.id == id);
+    if (findTodoIndex !== -1) {
+      todoList.splice(findTodoIndex, 1);
+    } else {
+      throw new Error();
+    }
+    res.status(200).json({ message: 'Success' });
+  } catch (error) {
+    res.status(404).send('Not Found');
+  }
+});
+
+app.listen(4000, () => console.log('running'));
+
+module.exports = app;
